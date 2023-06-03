@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <script>
+    // Dimensions du canevas de jeu
+    const canvasWidth = 400;
+    const canvasHeight = 400;
+
+    // Taille du serpent et du cube
+    const snakeSize = 20;
+    const cubeSize = 20;
+
+    // Initialisation de la position et de la vitesse du serpent
+    let snake = [
+      { x: canvasWidth / 2, y: canvasHeight / 2 }
+    ];
+    let snakeSpeedX = 0;
+    let snakeSpeedY = 0;
+
+    // Position initiale du cube
+    let cube = { x: getRandomPosition(canvasWidth), y: getRandomPosition(canvasHeight) };
+
+    // Variables de score et d'état du jeu
+    let score = 0;
+    let gameOver = false;
+
+    // Variables pour contrôler la vitesse du jeu
+    let lastUpdateTime = 0;
+    const updateInterval = 100; // en millisecondes (100ms = 0.1s)
+
+    // Fonction pour obtenir une position aléatoire
+    function getRandomPosition(max) {
+      return Math.floor(Math.random() * max / snakeSize) * snakeSize;
+    }
+
+    // Obtient le contexte du canevas
+    const canvas = document.getElementById('gameCanvas').getContext('2d');
+
+    // Fonction de mise à jour du jeu
+    function updateGame(currentTime) {
+      if (gameOver) {
+        const restart = confirm("Game Over! Voulez-vous recommencer ?");
+        if (restart) {
+          // Recommence le jeu
+          window.location.reload();
+        } else {
+          // Termine le jeu
+          return;
+        }
+      }
+
+      // Calcul du temps écoulé depuis la dernière mise à jour
+      const deltaTime = currentTime - lastUpdateTime;
+
+      // Vérification si le délai de mise à jour est atteint
+      if (deltaTime >= updateInterval) {
+        // Mise à jour du dernier temps de mise à jour
+        lastUpdateTime = currentTime;
+
+        // Efface tout le contenu du canevas
+        canvas.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        // Dessine la bordure
+        canvas.strokeStyle = "black";
+        canvas.lineWidth = 2;
+        canvas.strokeRect(0, 0, canvasWidth, canvasHeight);
+
+        // Met à jour la position de la tête du serpent
+        const newHeadX = snake[0].x + snakeSpeedX;
+        const newHeadY = snake[0].y + snakeSpeedY;
+
+        // Vérifie si le serpent a touché un mur
+        if (
+          newHeadX < 0 ||
+          newHeadX >= canvasWidth ||
+          newHeadY < 0 ||
+          newHeadY >= canvasHeight
+        ) {
+          gameOver = true;
+          alert("Vous vous êtes heurté à un mur ! Appuyez sur OK pour recommencer le jeu.");
+          window.location.reload();
+          return; // Fin du jeu
+        }
+
+        // Vérifie si le serpent a touché lui-même
+        for (let i = 1; i < snake.length; i++) {
+          if (newHeadX === snake[i].x && newHeadY === snake[i].y) {
+            gameOver = true;
+            alert("Vous vous êtes mordu la queue ! Appuyez sur OK pour recommencer le jeu.");
+            window.location.reload();
+            return; // Fin du jeu
+          }
+        }
+
+        // Vérifie si le serpent a mangé le cube
+        if (newHeadX === cube.x && newHeadY === cube.y) {
+          score++;
+
+          // Ajoute un nouveau segment au serpent
+          snake.unshift({ x: newHeadX, y: newHeadY });
+
+          // Génère une nouvelle position aléatoire pour le cube
+          cube = {
+            x: getRandomPosition(canvasWidth),
+            y: getRandomPosition(canvasHeight)
+          };
+        } else {
+          // Enlève le dernier segment du serpent
+          snake.pop();
+
+          // Ajoute la nouvelle tête du serpent
+          snake.unshift({ x: newHeadX, y: newHeadY });
+        }
+
+        // Dessine le serpent
+        canvas.fillStyle = "green";
+        snake.forEach(segment => {
+          canvas.fillRect(segment.x, segment.y, snakeSize, snakeSize);
+        });
+
+        // Dessine le cube
+        canvas.fillStyle = "red";
+        canvas.fillRect(cube.x, cube.y, cubeSize, cubeSize);
+
+        // Affiche le score
+        canvas.fillStyle = "black";
+        canvas.font = "20px Arial";
+        canvas.fillText("Score: " + score, 10, 30);
+      }
+
+      // Appelle la fonction de mise à jour du jeu à chaque rafraîchissement de l'écran
+      requestAnimationFrame(updateGame);
+    }
+
+    // Gestionnaires d'événements pour les touches du clavier
+    document.addEventListener("keydown", function (event) {
+      // Déplace le serpent en fonction de la touche enfoncée
+      if (event.key === "ArrowUp" && snakeSpeedY !== snakeSize) {
+        snakeSpeedX = 0;
+        snakeSpeedY = -snakeSize;
+      } else if (event.key === "ArrowDown" && snakeSpeedY !== -snakeSize) {
+        snakeSpeedX = 0;
+        snakeSpeedY = snakeSize;
+      } else if (event.key === "ArrowLeft" && snakeSpeedX !== snakeSize) {
+        snakeSpeedX = -snakeSize;
+        snakeSpeedY = 0;
+      } else if (event.key === "ArrowRight" && snakeSpeedX !== -snakeSize) {
+        snakeSpeedX = snakeSize;
+        snakeSpeedY = 0;
+      }
+    });
+
+    // Instructions pour jouer à côté de la délimitation
+    const instructions = document.createElement("p");
+    instructions.innerText = "Utilisez les touches du clavier pour déplacer le serpent. Évitez de vous heurter aux murs et de vous mordre la queue !";
+    document.body.appendChild(instructions);
+
+    // Boîte de dialogue pour commencer le jeu
+    const startGame = confirm("Appuyez sur OK pour commencer le jeu !");
+    if (startGame) {
+      requestAnimationFrame(updateGame);
+    }
+  </script>
+</body>
+</html>
